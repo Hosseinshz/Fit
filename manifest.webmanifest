@@ -1,0 +1,19 @@
+{
+  "name": "الهام فیت | برنامه‌ساز تمرین",
+  "short_name": "الهام فیت",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#c28f93",
+  "theme_color": "#cfa3a5",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
