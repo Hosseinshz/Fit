@@ -184,9 +184,13 @@
   #nojs b{display:block;font-size:17px;margin-bottom:6px}
   #nojs li{margin:4px 18px 4px 0}
   html.js #nojs{display:none}
-  :root{--vav:calc(100vh - 215px)}
-  @supports (height:100dvh){:root{--vav:calc(100dvh - 215px)}}
+  :root{--vav:calc(100vh - 275px)}
+  @supports (height:100dvh){:root{--vav:calc(100dvh - 275px)}}
   .vwrap{position:relative;width:100%;aspect-ratio:16/9;max-height:var(--vav);background:#000;border-radius:14px;overflow:hidden;margin:0 auto}
+  .vr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 2px;font-size:12px;color:var(--ink2);font-weight:700}
+  .vr button{border:1.5px solid var(--line);background:#fff;border-radius:16px;font:inherit;font-size:12px;font-weight:700;padding:5px 11px;color:var(--ink2)}
+  .vr button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .vrow.vs .vrsel{flex:none;font:inherit;font-size:12px;border:1.5px solid var(--line);border-radius:12px;padding:7px 8px;background:#fff;color:var(--ink)}
   .vwrap.port{aspect-ratio:9/16;width:min(100%,calc(var(--vav) * .5625))}
   .vwrap.tall{aspect-ratio:auto;height:min(640px,var(--vav));background:#fff}
   .vwrap iframe,.vwrap video{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;object-fit:contain}
@@ -433,7 +437,7 @@
         chips:Array.isArray(s.chips)?s.chips.join('، '):str(s.chips),ex:[]};
       (s.ex||[]).forEach(function(e){
         var ms=(e.m||[]).map(function(m){
-          return typeof m==='string'?{n:m,r:'12',u:'r',v:''}:{n:str(m.n),r:str(m.r),u:m.u==='s'?'s':'r',v:str(m.v)};
+          return typeof m==='string'?{n:m,r:'12',u:'r',v:'',vr:''}:{n:str(m.n),r:str(m.r),u:m.u==='s'?'s':'r',v:str(m.v),vr:/^(16:9|4:3|1:1|4:5|9:16)$/.test(str(m.vr))?str(m.vr):''};
         });
         if(!ms.length)return;
         S.ex.push({m:ms,s:Math.max(1,Math.min(20,+e.s||3)),bw:!!e.bw,note:str(e.note)});
@@ -566,6 +570,19 @@
     if(/picofile\.com/i.test(u))return {k:'pico',u:u,label:'پیکوفایل'};
     return {k:'link',u:u,label:'لینک'};
   }
+  var VR=['16:9','4:3','1:1','4:5','9:16'];
+  var VRL={'16:9':'افقی ۱۶:۹','4:3':'۴:۳','1:1':'مربع','4:5':'۴:۵','9:16':'عمودی ۹:۱۶'};
+  var VCTX=null;
+  function vrGet(u){var m=LS.get('ef_vr')||{};return m[u]||''}
+  function vrSet(u,r){var m=LS.get('ef_vr')||{};m[u]=r;LS.set('ef_vr',m)}
+  function applyRatio(r){
+    var wr=$('#mbox .vwrap');if(!wr||!r)return;
+    var p=r.split(':'),w=+p[0],h=+p[1];if(!w||!h)return;
+    wr.classList.remove('tall','port');wr.style.height='';
+    wr.style.aspectRatio=w+'/'+h;
+    wr.style.width='min(100%,calc(var(--vav) * '+(w/h).toFixed(4)+'))';
+    $$('#mbox .vr button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-r')===r)});
+  }
   function fitVideo(){
     var vd=$('#mbox video');if(!vd)return;
     vd.addEventListener('loadedmetadata',function(){
@@ -574,19 +591,23 @@
       if(h>w)wr.style.width='min(100%,calc(var(--vav) * '+(w/h).toFixed(4)+'))';
     });
   }
-  function openVideo(url,title){
+  function openVideo(url,title,vr,onPick){
     var v=parseVideo(url);
     if(!v){toast('لینکی برای این حرکت ثبت نشده');return}
-    var body='';
+    var body='',canR=!!(v.embed&&v.k!=='ig');
     if(v.embed){
-      body='<div class="vwrap'+(v.tall?' tall':'')+(v.port?' port':'')+'"><iframe src="'+esc(v.embed)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div>';
+      body='<div class="vwrap'+(v.tall?' tall':'')+'"><iframe src="'+esc(v.embed)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div>';
     }else if(v.k==='file'){
       body='<div class="vwrap"><video controls playsinline preload="metadata" src="'+esc(v.u)+'"></video></div>';
     }else{
       body='<div class="vmsg">'+(v.k==='pico'?'این لینک پیکوفایل یک صفحه‌ی دانلود است و داخل برنامه پخش نمی‌شه. با دکمه‌ی پایین در یک برگه‌ی جدید باز کن و ویدیو رو ببین یا دانلودش کن.':'این لینک داخل برنامه قابل نمایش نیست. با دکمه‌ی پایین در یک برگه‌ی جدید باز کن.')+'</div>';
     }
+    var cur=vr||vrGet(v.u)||(v.port?'9:16':'16:9');
     openModal('<button class="mclose" data-act="close" type="button">×</button><h3>'+esc(title||'ویدیو آموزشی')+'</h3>'+body+
+      (canR?'<div class="vr"><span>اگه ویدیو کامل تو کادر نیست، کادر رو عوض کن:</span>'+VR.map(function(r){return '<button type="button" data-act="vratio" data-r="'+r+'">'+VRL[r]+'</button>'}).join('')+'</div>':'')+
       '<a class="open" href="'+esc(v.u)+'" target="_blank" rel="noopener">باز کردن در برگه‌ی جدید</a>');
+    VCTX={url:v.u,pick:onPick||null};
+    if(canR)applyRatio(cur);
     fitVideo();
   }
   function vHint(pv){
@@ -650,7 +671,7 @@
       h+='<div class="vrow"><input type="text" inputmode="url" data-sc="m"'+a+' data-f="v" value="'+esc(m.v)+'" placeholder="لینک ویدیو (یوتیوب، آپارات، اینستاگرام، mp4)" autocomplete="off" autocapitalize="off">'+
          '<button class="btn sm ghost" type="button" data-act="vtest"'+a+'>🎥 پیش‌نمایش</button></div>'+
          '<div class="vt">'+vHint(pv)+'</div>'+
-         '<div class="vrow vs"><button class="btn sm ghost" type="button" data-act="vyt"'+a+'>🔎 یوتیوب</button><button class="btn sm ghost" type="button" data-act="vap"'+a+'>🔎 آپارات</button><span class="vt" style="margin:0">پیدا کردن ویدیوی این حرکت</span></div>';
+         '<div class="vrow vs"><button class="btn sm ghost" type="button" data-act="vyt"'+a+'>🔎 یوتیوب</button><button class="btn sm ghost" type="button" data-act="vap"'+a+'>🔎 آپارات</button><select class="vrsel" data-sc="m"'+a+' data-f="vr" aria-label="نسبت کادر ویدیو">'+[['','کادر: خودکار'],['16:9','افقی ۱۶:۹'],['4:3','۴:۳'],['1:1','مربع'],['4:5','۴:۵'],['9:16','عمودی ۹:۱۶']].map(function(o){return '<option value="'+o[0]+'"'+((m.vr||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><span class="vt" style="margin:0">پیدا کردن ویدیوی این حرکت</span></div>';
     }
     return h+'</div>';
   }
@@ -783,7 +804,7 @@
       case 'sets-':X.s=Math.max(1,X.s-1);break;
       case 'unit':X.m[m].u=X.m[m].u==='s'?'r':'s';break;
       case 'vid':X.m[m].o=!X.m[m].o;if(X.m[m].o)pendingFocus='[data-sc="m"][data-e="'+e+'"][data-m="'+m+'"][data-f="v"]';break;
-      case 'vtest':openVideo(X.m[m].v,X.m[m].n);return;
+      case 'vtest':openVideo(X.m[m].v,X.m[m].n,X.m[m].vr,function(r){X.m[m].vr=r;save();var sel=$('select[data-f="vr"][data-e="'+t.getAttribute('data-e')+'"][data-m="'+t.getAttribute('data-m')+'"]');if(sel)sel.value=r});return;
       case 'vyt':case 'vap':
         var qn=(X.m[m].n||'').trim();if(!qn){toast('اول نام حرکت رو بنویس');return}
         window.open(a==='vyt'?'https://www.youtube.com/results?search_query='+encodeURIComponent(qn+' آموزش'):'https://www.aparat.com/search/'+encodeURIComponent(qn),'_blank');return;
@@ -1311,7 +1332,7 @@
       $$('.session').forEach(function(p){p.classList.toggle('active',p.id==='p-'+sid)});
       vProgress(sid);vLast();scrollTopSmooth();
     }else if(a==='vrest'){V.st.rest=+t.getAttribute('data-r');vSave();vRestBtns();toast('استراحت '+fa(V.st.rest)+' ثانیه')}
-    else if(a==='video'){var m=vSes(sid).ex[+t.getAttribute('data-i')].m[+t.getAttribute('data-j')];openVideo(m.v,m.n)}
+    else if(a==='video'){var m=vSes(sid).ex[+t.getAttribute('data-i')].m[+t.getAttribute('data-j')];openVideo(m.v,m.n,m.vr)}
     else if(a==='vfinish'){
       var cur=V.st.cur,d=vSetsDone(cur),tt=vTotals(cur);
       if(d<tt&&!confirm('هنوز همه ست‌ها تیک نخورده. جلسه ثبت بشه؟'))return;
@@ -1332,6 +1353,7 @@
     }
     else if(a==='rpe'){var rv=+t.getAttribute('data-v');V.rep.fb.d=V.rep.fb.d===rv?0:rv;$$('#rpeRow .rc').forEach(function(b){b.classList.toggle('on',+b.getAttribute('data-v')===V.rep.fb.d)});repPre()}
     else if(a==='rbody'){var bv=t.getAttribute('data-v');V.rep.fb.b=V.rep.fb.b===bv?'':bv;$$('#bodyRow .rc').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===V.rep.fb.b)});repPre()}
+    else if(a==='rpdf')repPDF();
     else if(a==='rtg'||a==='rshare'||a==='rcopy')repSend(a);
     else if(a==='pdfone')doPrint('one');
     else if(a==='pdfall')doPrint('all');
@@ -1409,9 +1431,9 @@
       '<div class="rlab">حال بدنت چطور بود؟</div><div class="rchips" id="bodyRow">'+BODY.map(function(b,i){return '<button class="rc w" type="button" data-act="rbody" data-v="'+i+'">'+b+'</button>'}).join('')+'</div>'+
       '<div class="rlab">توضیح برای مربی (اختیاری)</div><textarea id="repNote" placeholder="مثلاً: وزنه‌ی لت سبک بود / کمرم کمی درد داشت"></textarea>'+
       '<div class="rlab">پیش‌نمایش گزارش</div><pre class="reppre" id="repPre"></pre>'+
-      (h?'<button class="btn pri mbtn" type="button" data-act="rtg" style="text-align:center;margin-top:12px">✈️ ارسال به مربی در تلگرام (@'+esc(h)+')<small>گزارش کپی می‌شه و چت مربی باز می‌شه؛ اگه متن خودش نیومد، پیست کن</small></button>':'<div class="hint" style="margin-top:10px">آیدی تلگرام مربی توی این برنامه ثبت نشده؛ گزارش رو کپی کن یا با «اشتراک‌گذاری» برای مربی بفرست.</div>')+
-      (navigator.share?'<button class="btn mbtn" type="button" data-act="rshare" style="text-align:center">📤 اشتراک‌گذاری (واتساپ، تلگرام، …)</button>':'')+
-      '<button class="btn mbtn" type="button" data-act="rcopy" style="text-align:center">📋 کپی گزارش</button>');
+      '<button class="btn pri mbtn" type="button" data-act="rpdf" style="text-align:center;margin-top:12px">📄 ساخت PDF گزارش و ارسال<small>نام تو و تاریخ تمرین (فارسی) روی فایل می‌آد؛ تو منوی ارسال «تلگرام» و چت مربی رو انتخاب کن</small></button>'+
+      (h?'<button class="btn mbtn" type="button" data-act="rtg" style="text-align:center">✈️ باز کردن چت مربی در تلگرام (@'+esc(h)+')<small>اگه PDF ذخیره شد، توی چت پیوستش کن</small></button>':'<div class="hint" style="margin-top:10px">آیدی تلگرام مربی توی این برنامه ثبت نشده؛ PDF رو بساز و خودت برای مربی بفرست.</div>')+
+      '<button class="btn mbtn" type="button" data-act="rcopy" style="text-align:center">📋 کپی متن گزارش</button>');
     repPre();
   }
   function copyText(t,cb){
@@ -1427,14 +1449,204 @@
     if(!V||!V.rep)return;
     var txt=repText(V.rep.sn,V.rep.fb);
     if(a==='rshare'){try{navigator.share({title:'گزارش تمرین',text:txt}).catch(function(){})}catch(e){}return}
-    copyText(txt,function(ok){toast(ok?(a==='rtg'?'گزارش کپی شد؛ اگه تو چت مربی نیومد، پیست کن':'گزارش کپی شد ✓'):'کپی نشد؛ متن پیش‌نمایش رو دستی کپی کن')});
     if(a==='rtg'){
       var h=tgHandle(V.p.tg);if(!h)return;
-      var url='https://t.me/'+h+'?text='+encodeURIComponent(txt.length>3000?txt.slice(0,3000):txt),w=null;
+      var url='https://t.me/'+h,w=null;
       try{w=window.open(url,'_blank')}catch(e){}
       if(!w)location.href=url;
+      return;
     }
+    copyText(txt,function(ok){toast(ok?'گزارش کپی شد ✓':'کپی نشد؛ متن پیش‌نمایش رو دستی کپی کن')});
   }
+  /* ---------- گزارش PDF ---------- */
+  function dcm(v){return fa(String(v).replace('.','٫'))}
+  function repStats(sn){
+    var r={tot:0,dn:0,full:0,vol:0,chg:[],mins:0};
+    sn.ex.forEach(function(x){
+      r.tot+=x.s;r.dn+=x.done;if(x.done>=x.s)r.full++;
+      x.m.forEach(function(m){
+        var w=numOf(m.w),pw=numOf(m.pw),q=numOf(m.r);
+        if(w!=null&&pw!=null&&w!==pw)r.chg.push({up:w>pw,n:m.n,a:pw,b:w});
+        if(w&&q&&m.u==='r'&&x.done&&!x.bw)r.vol+=w*q*x.done;
+      });
+    });
+    r.pct=r.tot?Math.round(r.dn/r.tot*100):0;
+    var mn=sn.t0?Math.round((sn.ts-sn.t0)/60000):0;r.mins=(mn>=1&&mn<=300)?mn:0;
+    return r;
+  }
+  function repDates(ts){
+    var d=new Date(ts),o={full:'',day:'',time:''};
+    try{
+      o.full=d.toLocaleDateString('fa-IR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      o.day=d.toLocaleDateString('fa-IR',{day:'numeric',month:'long',year:'numeric'});
+      o.time=d.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){}
+    return o;
+  }
+  function repFileName(sn){
+    var nm=(V.p.student||'').trim(),dt=repDates(sn.ts).day;
+    return safeName('گزارش تمرین'+(nm?' - '+nm:'')+(dt?' - '+dt:''))+'.pdf';
+  }
+  function repCanvases(sn,fb){
+    var W=1240,H=1754,M=64,CW=W-2*M,R=W-M,pages=[],cv,cx,y,st=repStats(sn),p=V.p,dt=repDates(sn.ts);
+    var cs=getComputedStyle(document.body);
+    var acc=(cs.getPropertyValue('--acc')||'').trim()||'#b8606d',acc2=(cs.getPropertyValue('--acc2')||'').trim()||'#d68a93';
+    var INK='#3a2d2d',MUT='#8a7878',LINE='#ecdcdb',SOFT='#fcf6f5',OK='#2e9e6b',WARN='#e0a030',BAD='#d9534f';
+    var FF="Vazirmatn,Tahoma,'Segoe UI',Arial,sans-serif";
+    function F(w,s){return w+' '+s+'px '+FF}
+    function T(t,x,yy,font,col,al){cx.font=font;cx.fillStyle=col;cx.textAlign=al||'right';cx.fillText(t,x,yy)}
+    function wrap(t,font,mw){
+      cx.font=font;var ws=String(t).split(' '),ls=[],l='';
+      ws.forEach(function(w){var s=l?l+' '+w:w;if(cx.measureText(s).width>mw&&l){ls.push(l);l=w}else l=s});
+      if(l)ls.push(l);return ls.length?ls:[''];
+    }
+    function rr(x,yy,w,h,r,fill,stroke){
+      cx.beginPath();cx.moveTo(x+r,yy);cx.arcTo(x+w,yy,x+w,yy+h,r);cx.arcTo(x+w,yy+h,x,yy+h,r);cx.arcTo(x,yy+h,x,yy,r);cx.arcTo(x,yy,x+w,yy,r);cx.closePath();
+      if(fill){cx.fillStyle=fill;cx.fill()}if(stroke){cx.strokeStyle=stroke;cx.lineWidth=2;cx.stroke()}
+    }
+    function grad(x,yy,w,h){var g=cx.createLinearGradient(x,0,x+w,0);g.addColorStop(0,acc2);g.addColorStop(1,acc);return g}
+    function page(first){
+      cv=document.createElement('canvas');cv.width=W;cv.height=H;cx=cv.getContext('2d');
+      try{cx.direction='rtl'}catch(e){}
+      cx.textBaseline='middle';cx.fillStyle='#fff';cx.fillRect(0,0,W,H);pages.push(cv);
+      if(first){
+        cx.fillStyle=grad(0,0,W,300);cx.fillRect(0,0,W,300);
+        T(p.coach||'گزارش تمرین',R,78,F(800,46),'#fff');
+        T('گزارش تمرین',M,78,F(600,30),'rgba(255,255,255,.85)','left');
+        T((p.student?'شاگرد: '+p.student:'')+(p.title?(p.student?' · ':'')+p.title:''),R,150,F(700,34),'#fff');
+        T(dt.full+(dt.time?' · ساعت '+dt.time:''),R,212,F(500,28),'rgba(255,255,255,.9)');
+        y=340;
+      }else{
+        cx.fillStyle=grad(0,0,W,90);cx.fillRect(0,0,W,90);
+        T((p.coach||'')+' · گزارش تمرین'+(p.student?' · '+p.student:''),R,46,F(700,28),'#fff');
+        y=130;
+      }
+    }
+    function need(h){if(y+h>H-M-40)page(false)}
+    page(true);
+    // جلسه
+    T(sn.name+(sn.tag?' · '+sn.tag:''),R,y+20,F(800,40),INK);y+=70;
+    // کارت‌های آمار
+    var bw=(CW-3*18)/4,cards=[[fa(st.dn)+'/'+fa(st.tot),'ست انجام‌شده'],[fa(st.full)+'/'+fa(sn.ex.length),'حرکت کامل'],[fa(st.pct)+'٪','پیشرفت'],[st.mins?fa(st.mins)+' دقیقه':'—','مدت تمرین']];
+    cards.forEach(function(c,i){
+      var x=R-(i+1)*bw-i*18;rr(x,y,bw,130,22,SOFT,LINE);
+      T(c[0],x+bw/2,y+52,F(800,38),acc,'center');T(c[1],x+bw/2,y+98,F(500,24),MUT,'center');
+    });
+    y+=160;
+    rr(M,y,CW,16,8,LINE);if(st.pct>0)rr(M,y,Math.max(16,CW*st.pct/100),16,8,grad(M,y,CW,16));
+    y+=56;
+    // جدول
+    var cw=[64,0,130,190,180,96];cw[1]=CW-cw[0]-cw[2]-cw[3]-cw[4]-cw[5];
+    var cr=[],xr=R;cw.forEach(function(w){cr.push({r:xr,l:xr-w,c:xr-w/2,w:w});xr-=w});
+    function tHead(){
+      rr(M,y,CW,56,14,SOFT,LINE);
+      T('حرکت',cr[1].r-16,y+28,F(700,24),MUT);
+      [['ست',2],['تکرار',3],['وزنه',4],['وضعیت',5]].forEach(function(h){T(h[0],cr[h[1]].c,y+28,F(700,24),MUT,'center')});
+      y+=66;
+    }
+    tHead();
+    var NF=F(600,28),LH=40;
+    sn.ex.forEach(function(x,i){
+      var subs=x.m.map(function(m,k){
+        var ls=wrap((k?'+ ':'')+m.n,NF,cr[1].w-34);return {m:m,ls:ls,h:Math.max(ls.length*LH+22,66)};
+      });
+      var gh=0;subs.forEach(function(s){gh+=s.h});
+      if(y+gh>H-M-40){page(false);tHead()}
+      var col=x.done>=x.s?OK:(x.done>0?WARN:BAD);
+      if(i%2===0)rr(M,y,CW,gh,14,SOFT);
+      if(x.m.length>1)rr(R-6,y+8,6,gh-16,3,acc);
+      var cy=y+gh/2;
+      cx.beginPath();cx.arc(cr[0].c,cy,22,0,7);cx.fillStyle=acc;cx.fill();T(fa(i+1),cr[0].c,cy+1,F(700,24),'#fff','center');
+      T(fa(x.done)+'/'+fa(x.s),cr[2].c,cy,F(800,30),col,'center');
+      cx.beginPath();cx.arc(cr[5].c,cy,22,0,7);cx.fillStyle=col;cx.fill();
+      T(x.done>=x.s?'✓':(x.done>0?'!':'✕'),cr[5].c,cy+1,F(800,26),'#fff','center');
+      var yy=y;
+      subs.forEach(function(s,k){
+        var mid=yy+s.h/2;
+        s.ls.forEach(function(l,li){T(l,cr[1].r-16,mid-(s.ls.length-1)*LH/2+li*LH,NF,INK)});
+        T(fa(s.m.r)+' '+(s.m.u==='s'?'ثانیه':'تکرار'),cr[3].c,mid,F(600,26),INK,'center');
+        T(s.m.w?(x.bw?'+':'')+dcm(s.m.w)+' kg':(x.bw?'وزن بدن':'—'),cr[4].c,mid,F(600,26),s.m.w?INK:MUT,'center');
+        if(k<subs.length-1){cx.strokeStyle=LINE;cx.lineWidth=2;cx.setLineDash([6,6]);cx.beginPath();cx.moveTo(cr[1].l+10,yy+s.h);cx.lineTo(cr[1].r-30,yy+s.h);cx.stroke();cx.setLineDash([])}
+        yy+=s.h;
+      });
+      y+=gh+8;
+    });
+    y+=20;
+    if(st.chg.length){
+      need(80+st.chg.length*48);
+      T('پیشرفت وزنه‌ها نسبت به جلسه‌ی قبل',R,y+20,F(800,32),acc);y+=62;
+      st.chg.forEach(function(c){T((c.up?'▲ ':'▼ ')+c.n+': '+dcm(c.a)+' ← '+dcm(c.b)+' kg',R,y+14,F(600,28),c.up?OK:BAD);y+=48});
+      y+=14;
+    }
+    if(st.vol>0){need(90);rr(M,y,CW,76,18,SOFT,LINE);T('حجم کل تقریبی (ست × تکرار × وزنه)',R-24,y+38,F(600,27),INK);T(grp(st.vol)+' kg',M+24,y+38,F(800,30),acc,'left');y+=106}
+    var hasFb=fb&&(fb.d||fb.b!==''||(fb.n||'').trim());
+    if(hasFb){
+      need(120);
+      T('بازخورد شاگرد',R,y+20,F(800,32),acc);y+=64;
+      if(fb.d){
+        need(70);T('سختی تمرین: '+fa(fb.d)+' از ۵ ('+RPE[fb.d]+')',R,y+20,F(600,28),INK);
+        for(var q=1;q<=5;q++){cx.beginPath();cx.arc(M+30+(q-1)*50,y+20,16,0,7);cx.fillStyle=q<=fb.d?acc:LINE;cx.fill()}
+        y+=66;
+      }
+      if(fb.b!==''){need(70);T('حال بدن: '+BODY[+fb.b].replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu,'').trim(),R,y+20,F(600,28),+fb.b===2?WARN:INK);y+=66}
+      if((fb.n||'').trim()){
+        var ls=wrap(fb.n.trim(),F(500,27),CW-60),bh=ls.length*42+40;need(bh+20);
+        rr(M,y,CW,bh,20,SOFT,LINE);ls.forEach(function(l,li){T(l,R-30,y+40+li*42,F(500,27),INK)});y+=bh+20;
+      }
+    }
+    need(80);
+    T('— ارسال‌شده از برنامه‌ی '+(p.coach||'تمرینی'),W/2,y+30,F(500,24),MUT,'center');
+    pages.forEach(function(c,i){var g=c.getContext('2d');try{g.direction='rtl'}catch(e){}g.textBaseline='middle';g.fillStyle=MUT;g.font=F(500,22);g.textAlign='center';g.fillText('صفحه '+fa(i+1)+' از '+fa(pages.length),W/2,H-36)});
+    return pages;
+  }
+  function pdfFromCanvases(cvs){
+    var enc=function(s){var a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i)&255;return a};
+    var chunks=[],off=0,xr=[];
+    function w(x){var b=typeof x==='string'?enc(x):x;chunks.push(b);off+=b.length}
+    function obj(n,body,stream){xr[n]=off;w(n+' 0 obj\n'+body);if(stream){w('\nstream\n');w(stream);w('\nendstream')}w('\nendobj\n')}
+    var n=cvs.length,PW=595.28,PH=841.89,kids=[];
+    w('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+    obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+    for(var i=0;i<n;i++)kids.push((3+i*3)+' 0 R');
+    obj(2,'<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+n+' >>');
+    cvs.forEach(function(c,i){
+      var pn=3+i*3,cn=pn+1,im=pn+2,bin=atob(c.toDataURL('image/jpeg',0.9).split(',')[1]),jb=new Uint8Array(bin.length);
+      for(var k=0;k<bin.length;k++)jb[k]=bin.charCodeAt(k);
+      var cs='q '+PW+' 0 0 '+PH+' 0 0 cm /Im0 Do Q';
+      obj(pn,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+PH+'] /Resources << /XObject << /Im0 '+im+' 0 R >> >> /Contents '+cn+' 0 R >>');
+      obj(cn,'<< /Length '+cs.length+' >>',cs);
+      obj(im,'<< /Type /XObject /Subtype /Image /Width '+c.width+' /Height '+c.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jb.length+' >>',jb);
+    });
+    var total=3+n*3,xo=off;
+    w('xref\n0 '+total+'\n0000000000 65535 f \n');
+    for(var j=1;j<total;j++)w(('0000000000'+xr[j]).slice(-10)+' 00000 n \n');
+    w('trailer\n<< /Size '+total+' /Root 1 0 R >>\nstartxref\n'+xo+'\n%%EOF');
+    var tot=0,pos=0;chunks.forEach(function(c){tot+=c.length});
+    var out=new Uint8Array(tot);chunks.forEach(function(c){out.set(c,pos);pos+=c.length});
+    return out;
+  }
+  function saveBytes(bytes,name,type){
+    var b=new Blob([bytes],{type:type}),a=document.createElement('a'),u=URL.createObjectURL(b);
+    a.href=u;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();
+    setTimeout(function(){try{document.body.removeChild(a)}catch(e){}try{URL.revokeObjectURL(u)}catch(e){}},IS_IOS?60000:5000);
+  }
+  function repPDF(){
+    if(!V||!V.rep)return;
+    var sn=V.rep.sn,fb=V.rep.fb,name=repFileName(sn);
+    var go=function(){
+      var bytes;
+      try{bytes=pdfFromCanvases(repCanvases(sn,fb))}catch(e){toast('ساخت PDF ناموفق بود؛ از «کپی متن» استفاده کن');return}
+      var file=null;try{file=new File([bytes],name,{type:'application/pdf'})}catch(e){}
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:name.replace(/\.pdf$/,'')}).catch(function(e){if(!e||e.name!=='AbortError')saveBytes(bytes,name,'application/pdf')});
+        return;
+      }
+      saveBytes(bytes,name,'application/pdf');
+      toast(tgHandle(V.p.tg)?'PDF ذخیره شد؛ توی چت تلگرام مربی پیوستش کن':'PDF ذخیره شد');
+    };
+    if(document.fonts&&document.fonts.status==='loading'&&document.fonts.ready)document.fonts.ready.then(go,go);else go();
+  }
+
   function vWeight(ev){
     var inp=ev.target;if(!inp.matches||!inp.matches('.w input'))return;
     var sid=inp.getAttribute('data-k'),i=inp.getAttribute('data-i'),j=+inp.getAttribute('data-j');
@@ -1538,6 +1750,7 @@
     if(!b)return;
     var a=b.getAttribute('data-act');
     if(a==='close'){closeModal();return}
+    if(a==='vratio'){var vrr=b.getAttribute('data-r');applyRatio(vrr);if(VCTX){vrSet(VCTX.url,vrr);if(VCTX.pick)VCTX.pick(vrr)}return}
     if(a==='upload'){$('#fileIn').value='';$('#fileIn').click();return}
     if(a==='progs'){openProgs();return}
     if(a==='newblank'){pendingFocus='#stName';openPlan(newPlan());return}
