@@ -268,6 +268,18 @@
 
   .finish{padding:14px 14px 6px}
   .finish-btn{width:100%;border:none;background:linear-gradient(135deg,var(--acc2),var(--acc));color:#fff;font:inherit;font-weight:800;font-size:15px;padding:14px;border-radius:16px;cursor:pointer;box-shadow:0 12px 24px -12px var(--acc);transition:.2s}
+  .rep-btn{width:100%;margin-top:8px;border:1.5px solid var(--acc);background:#fff;color:var(--acc);font:inherit;font-weight:800;font-size:14px;padding:12px;border-radius:16px;cursor:pointer}
+  .rstats{display:flex;gap:8px;margin:6px 0 2px}
+  .rstats div{flex:1;background:var(--soft);border-radius:14px;padding:10px 6px;text-align:center;font-size:11.5px;color:var(--ink2)}
+  .rstats b{display:block;font-size:17px;color:var(--acc);margin-bottom:2px}
+  .rlab{font-size:12.5px;font-weight:800;margin:14px 0 6px}
+  .rchips{display:flex;flex-wrap:wrap;gap:6px}
+  .rc{flex:1;min-width:54px;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:8px 4px;font:inherit;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rc small{display:block;font-size:10px;font-weight:600;margin-top:1px}
+  .rc.w{font-size:12.5px;flex:1 1 30%;min-width:0}
+  .rc.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  #repNote{width:100%;min-height:64px}
+  .reppre{white-space:pre-wrap;word-break:break-word;direction:rtl;text-align:right;font-family:inherit;font-size:12.5px;line-height:1.9;background:var(--soft);border-radius:14px;padding:12px;max-height:230px;overflow:auto;margin:0}
   .finish-btn:disabled{background:var(--line);color:var(--muted);box-shadow:none;cursor:not-allowed}
   .last{text-align:center;font-size:12px;color:var(--muted);margin-top:8px;line-height:1.9}
   .hist{margin-top:8px;font-size:11.5px;color:var(--ink2);background:var(--soft);border-radius:12px;padding:8px 10px;text-align:right}
@@ -393,7 +405,7 @@
   function newMovement(){return {n:'',r:'12',u:'r',v:''}}
   function newEx(){return {m:[newMovement()],s:3,bw:false,note:''}}
   function newSession(i){return {id:uid(),name:'جلسه '+fa(i+1),tag:'',chips:'',ex:[newEx()]}}
-  function newPlan(){return {v:1,id:uid(),title:'',coach:DEF.coach,student:'',ig:DEF.ig,tagline:DEF.tagline,msg:'',rest:60,sessions:[newSession(0)],updated:Date.now()}}
+  function newPlan(){return {v:1,id:uid(),title:'',coach:DEF.coach,student:'',ig:DEF.ig,tg:(LS.get('ef_tg')||''),tagline:DEF.tagline,msg:'',rest:60,sessions:[newSession(0)],updated:Date.now()}}
 
   var PRESETS=['پرس بالاسینه دمبل','پرس سینه دمبل','شنا سوئدی','قفسه بالاسینه دمبل','سرشانه ایستاده دست باز','پرس سرشانه دمبل','نشر جانب دمبل','نشر صلیب دمبل','فیس‌پول طناب','شراگ دمبل','شکم خلبانی','پهلو سیم‌کش ایستاده','پلانک روی آرنج','اسکوات اسمیت','اسکوات','جلوران دستگاه','پشت‌ران نشسته','پشت‌ران خوابیده','خیاطه دمبل','پل باسن با دمبل','هیپ تراست','لانج','ددلیفت رومانیایی','ساق پا نشسته دستگاه','ساق ایستاده وزن بدن','لت جلو دست باز','لت سیم‌کش جلو دست جمع','قایقی دست باز','پشت‌بازو طناب','پشت‌بازو هالتر خوابیده','جلوبازو لاری هالتر','جلوبازو سیم‌کش میله','جلوبازو دمبل تناوبی نشسته','شکم کشویی','کوهنورد','بارفیکس','تردمیل شیب‌دار'];
 
@@ -415,7 +427,7 @@
   /* ---------- نرمال‌سازی هر برنامه‌ای (جدید، قدیمی، JSON) ---------- */
   function normalize(p){
     var o={v:1,id:str(p.id)||uid(),title:str(p.title),coach:str(p.coach)||DEF.coach,student:str(p.student),
-      ig:p.ig!=null?str(p.ig):DEF.ig,tagline:p.tagline!=null?str(p.tagline):DEF.tagline,msg:str(p.msg),rest:+p.rest||60,created:+p.created||0,sessions:[],updated:Date.now()};
+      ig:p.ig!=null?str(p.ig):DEF.ig,tg:str(p.tg),tagline:p.tagline!=null?str(p.tagline):DEF.tagline,msg:str(p.msg),rest:+p.rest||60,created:+p.created||0,sessions:[],updated:Date.now()};
     (p.sessions||[]).forEach(function(s,i){
       var S={id:str(s.id)||uid(),name:str(s.name)||('جلسه '+fa(i+1)),tag:str(s.tag),
         chips:Array.isArray(s.chips)?s.chips.join('، '):str(s.chips),ex:[]};
@@ -675,6 +687,7 @@
        '<div class="grid2" style="margin-top:12px">'+
          '<div class="fld"><label>نام مربی</label><input type="text" data-sc="p" data-f="coach" value="'+esc(P.coach)+'" autocomplete="off"></div>'+
          '<div class="fld"><label>عنوان برنامه (اختیاری)</label><input type="text" data-sc="p" data-f="title" value="'+esc(P.title)+'" placeholder="مثلاً ماه اول" autocomplete="off"></div></div>'+
+       '<div class="fld" style="margin-top:10px"><label>✈️ آیدی تلگرام مربی (گزارش تمرین شاگرد به اینجا فرستاده می‌شه)</label><input type="text" data-sc="p" data-f="tg" value="'+esc(P.tg)+'" placeholder="@username" style="direction:ltr;text-align:left" autocomplete="off" autocapitalize="off"><div class="vt">فقط نام کاربری تلگرام (نه شماره)، مثلاً @elham_fit</div></div>'+
        '<div class="grid2" style="margin-top:10px">'+
          '<div class="fld"><label>استراحت پیش‌فرض بین ست‌ها</label><select data-sc="p" data-f="rest">'+[30,45,60,90,120].map(function(s){return '<option value="'+s+'"'+(+P.rest===s?' selected':'')+'>'+fa(s)+' ثانیه</option>'}).join('')+'</select></div>'+
          '<div class="fld"><label>اینستاگرام</label><input type="text" data-sc="p" data-f="ig" value="'+esc(P.ig)+'" style="direction:ltr;text-align:left" autocomplete="off" autocapitalize="off"></div></div>'+
@@ -716,6 +729,7 @@
     else if(f==='rest'){o.rest=+t.value||60}
     else if(f==='r'){o.r=en(t.value)}
     else{o[f]=t.value}
+    if(f==='tg')LS.set('ef_tg',t.value);
     if(f==='v'){var vt=t.parentNode&&t.parentNode.nextSibling;var pv=parseVideo(t.value);if(vt&&vt.className==='vt')vt.textContent=vHint(pv)}
     if(f==='name'||f==='student'||f==='coach'){var s=$('.bt-s');if(s)s.textContent=(plan.coach||'')+(plan.student?' · '+plan.student:'')}
     if(f==='name'&&t.getAttribute('data-sc')==='s'){var tb=$$('.stab')[si];if(tb)tb.textContent=o.name||('جلسه '+fa(si+1))}
@@ -1082,7 +1096,7 @@
     var c=validOut();if(!c)return;var s=stats(c);
     var canShare=!!navigator.share;
     openModal('<button class="mclose" data-act="close" type="button">×</button><h3>خروجی برنامه</h3>'+
-      '<div class="hint">'+fa(s.s)+' جلسه · '+fa(s.m)+' حرکت · '+fa(s.v)+' ویدیو'+(c.student?' · برای '+esc(c.student):'')+'<br>حرکت‌های بدون نام خودکار نادیده گرفته می‌شن.</div>'+
+      '<div class="hint">'+fa(s.s)+' جلسه · '+fa(s.m)+' حرکت · '+fa(s.v)+' ویدیو'+(c.student?' · برای '+esc(c.student):'')+'<br>حرکت‌های بدون نام خودکار نادیده گرفته می‌شن.'+(tgHandle(c.tg)?'<br>✈️ گزارش شاگرد به @'+tgHandle(c.tg)+' فرستاده می‌شه':'<br>⚠️ آیدی تلگرام مربی خالی یا نامعتبره؛ از «مشخصات برنامه» پرش کن تا شاگرد بتونه گزارش بفرسته')+'</div>'+
       '<div class="fld" style="margin:0 0 6px"><label>👤 نام شاگرد (اسم فایل هم همین می‌شه)</label><input type="text" id="expName" value="'+esc(plan.student)+'" placeholder="نام شاگرد" autocomplete="off"></div><div class="hint" id="expFn"></div>'+
       '<button class="btn pri mbtn" type="button" data-act="expfile">⬇ فایل برنامه برای شاگرد<small>یک فایل HTML شامل ویدیوها؛ روی اندروید و کامپیوتر کامل باز می‌شه. روی آیفون داخل پیش‌نمایش فایل‌ها فقط نسخه‌ی ساده دیده می‌شه</small></button>'+
       (canShare?'<button class="btn mbtn" type="button" data-act="expshare">📤 ارسال مستقیم فایل (تلگرام، واتساپ…)</button>':'')+
@@ -1181,7 +1195,7 @@
   function vStart(p,o){
     mode='v';
     var key='ef_s_'+p.id;
-    var st={done:{},w:{},hist:{},rest:p.rest||60,cur:p.sessions[0].id};
+    var st={done:{},w:{},hist:{},t0:{},pw:{},rep:{},rest:p.rest||60,cur:p.sessions[0].id};
     if(o.persist){var raw=LS.get(key);if(raw){for(var k in raw)st[k]=raw[k]}}
     p.sessions.forEach(function(s){st.done[s.id]=st.done[s.id]||{};st.w[s.id]=st.w[s.id]||{};st.hist[s.id]=st.hist[s.id]||[]});
     if(!p.sessions.some(function(s){return s.id===st.cur}))st.cur=p.sessions[0].id;
@@ -1222,7 +1236,7 @@
         '<div class="stats"><div class="stat"><b>'+fa(s.ex.length)+'</b>حرکت</div><div class="stat"><b>'+fa(totalSets(s))+'</b>ست</div><div class="stat"><b class="sd">۰</b>ست انجام‌شده</div></div></div><div class="list">'+exs+'</div></section>';
     }).join('')+'</div>';
     h+='<div class="rest-cfg"><span>زمان استراحت:</span>'+[30,45,60,90,120].map(function(s){return '<button type="button" data-act="vrest" data-r="'+s+'">'+fa(s)+'ث</button>'}).join('')+'</div>';
-    h+='<div class="finish"><button class="finish-btn" id="finishBtn" type="button" data-act="vfinish">ثبت پایان جلسه ✨</button><div class="last" id="lastDone"></div></div>';
+    h+='<div class="finish"><button class="finish-btn" id="finishBtn" type="button" data-act="vfinish">ثبت پایان جلسه ✨</button><button class="rep-btn" type="button" data-act="vreport">📤 ارسال گزارش به مربی</button><div class="last" id="lastDone"></div></div>';
     var ig=igHandle(p);
     h+='<div class="actions"><div class="pdf-buttons"><button class="pbtn p" type="button" data-act="pdfone">دانلود این جلسه (PDF)</button><button class="pbtn s" type="button" data-act="pdfall">دانلود کل برنامه (PDF)</button></div>'+
        '<div class="foot">موفق باشی! 💪<br>'+(ig?'<a href="https://www.instagram.com/'+esc(ig)+'" target="_blank" rel="noopener">@'+esc(ig)+'</a><br>':'')+'<button class="reset" type="button" data-act="vreset">ریست کردن این جلسه</button></div></div>';
@@ -1280,7 +1294,7 @@
   function vCheck(t){
     var sid=t.getAttribute('data-k'),i=+t.getAttribute('data-i'),n=+t.getAttribute('data-n'),s=vSes(sid),x=s.ex[i];
     var curN=V.st.done[sid][i]||0,nn=t.checked?n:n-1;
-    V.st.done[sid][i]=nn;vSave();
+    V.st.done[sid][i]=nn;if(nn>curN&&!V.st.t0[sid])V.st.t0[sid]=Date.now();vSave();
     $$('.set input[data-k="'+sid+'"][data-i="'+i+'"]').forEach(function(b){b.checked=+b.getAttribute('data-n')<=nn});
     $('#ex-'+sid+'-'+i).classList.toggle('done',nn>=x.s);
     vProgress(sid);vTabDots();
@@ -1301,17 +1315,125 @@
     else if(a==='vfinish'){
       var cur=V.st.cur,d=vSetsDone(cur),tt=vTotals(cur);
       if(d<tt&&!confirm('هنوز همه ست‌ها تیک نخورده. جلسه ثبت بشه؟'))return;
-      V.st.hist[cur].push(Date.now());V.st.done[cur]={};vSave();
+      var snap=repSnap(cur);
+      V.st.hist[cur].push(Date.now());V.st.pw[cur]=JSON.parse(JSON.stringify(V.st.w[cur]||{}));V.st.done[cur]={};delete V.st.t0[cur];V.st.rep[cur]=snap;vSave();
       toast(d>=tt?'آفرین! جلسه کامل شد 🎉':'جلسه ثبت شد 💪');
       vRestore();stopTimer();scrollTopSmooth();
+      openReport(snap,true);
     }
     else if(a==='vreset'){
       if(!confirm('تیک ست‌های این جلسه پاک بشه؟ (وزنه‌هات می‌مونه)'))return;
-      V.st.done[V.st.cur]={};vSave();vRestore();stopTimer();
+      V.st.done[V.st.cur]={};delete V.st.t0[V.st.cur];vSave();vRestore();stopTimer();
     }
+    else if(a==='vreport'){
+      var c2=V.st.cur,sn=vSetsDone(c2)>0?repSnap(c2):V.st.rep[c2];
+      if(!sn){toast('اول چند ست رو تیک بزن');return}
+      openReport(sn,false);
+    }
+    else if(a==='rpe'){var rv=+t.getAttribute('data-v');V.rep.fb.d=V.rep.fb.d===rv?0:rv;$$('#rpeRow .rc').forEach(function(b){b.classList.toggle('on',+b.getAttribute('data-v')===V.rep.fb.d)});repPre()}
+    else if(a==='rbody'){var bv=t.getAttribute('data-v');V.rep.fb.b=V.rep.fb.b===bv?'':bv;$$('#bodyRow .rc').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===V.rep.fb.b)});repPre()}
+    else if(a==='rtg'||a==='rshare'||a==='rcopy')repSend(a);
     else if(a==='pdfone')doPrint('one');
     else if(a==='pdfall')doPrint('all');
     else if(a==='back'){stopTimer();V=null;mode='b';bRender();}
+  }
+  /* ================= گزارش شاگرد برای مربی ================= */
+  function tgHandle(s){
+    s=String(s||'').trim().replace(/^(https?:\/\/)?(www\.)?(t|telegram)\.me\//i,'').replace(/^@/,'').split(/[\/?#\s]/)[0];
+    return /^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(s)?s:'';
+  }
+  function numOf(x){var n=parseFloat(en(String(x==null?'':x)).replace(',','.'));return isNaN(n)?null:n}
+  function grp(n){return fa(String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,'٬'))}
+  var RPE=['','خیلی آسون','آسون','مناسب','سخت','خیلی سخت'];
+  var BODY=['عالی بود 💪','کمی خسته بودم 😅','درد یا گرفتگی داشتم ⚠️'];
+  function repSnap(sid){
+    var s=vSes(sid),d=V.st.done[sid]||{},w=V.st.w[sid]||{},pw=V.st.pw[sid]||{};
+    var sn={ts:Date.now(),sid:sid,name:s.name,tag:s.tag,t0:V.st.t0[sid]||0,ex:[]};
+    s.ex.forEach(function(x,i){
+      sn.ex.push({s:x.s,done:Math.min(d[i]||0,x.s),bw:!!x.bw,m:x.m.map(function(m,j){
+        return {n:m.n,r:m.r,u:m.u,w:String((w[i]||[])[j]||'').trim(),pw:String((pw[i]||[])[j]||'').trim()};
+      })});
+    });
+    return sn;
+  }
+  function repText(sn,fb){
+    var p=V.p,L=[],tot=0,dn=0,full=0,vol=0,chg=[];
+    sn.ex.forEach(function(x){tot+=x.s;dn+=x.done;if(x.done>=x.s)full++});
+    var pct=tot?Math.round(dn/tot*100):0,dt=new Date(sn.ts),dS='',tS='';
+    try{dS=dt.toLocaleDateString('fa-IR',{weekday:'long',day:'numeric',month:'long'});tS=dt.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}catch(e){}
+    L.push('📋 گزارش تمرین'+(p.coach?' · '+p.coach:''));
+    if(p.student)L.push('👤 '+p.student);
+    L.push('🗓 '+dS+(tS?' · ساعت '+tS:''));
+    L.push('🏋️ '+sn.name+(sn.tag?' · '+sn.tag:''));
+    var mins=sn.t0?Math.round((sn.ts-sn.t0)/60000):0;
+    if(mins>=1&&mins<=300)L.push('⏱ مدت تمرین: '+fa(mins)+' دقیقه');
+    L.push('✅ '+fa(dn)+' از '+fa(tot)+' ست ('+fa(pct)+'٪) · '+fa(full)+' از '+fa(sn.ex.length)+' حرکت کامل');
+    L.push('─────────────');
+    var ru=function(m){return fa(m.r)+(m.u==='s'?' ثانیه':' تکرار')};
+    var dc=function(v){return fa(String(v).replace('.','٫'))};
+    var wt=function(m,bw){return m.w?' · '+(bw?'+':'')+dc(m.w)+' kg':''};
+    sn.ex.forEach(function(x,i){
+      var ic=x.done>=x.s?'✅':(x.done>0?'⚠️':'❌');
+      L.push(fa(i+1)+'. '+x.m.map(function(m){return m.n}).join(' + ')+(x.m.length>1?' (سوپرست)':''));
+      var line=ic+' '+fa(x.done)+'/'+fa(x.s)+' ست';
+      if(x.m.length===1){line+=' · '+ru(x.m[0])+wt(x.m[0],x.bw);if(!x.m[0].w&&x.bw)line+=' · وزن بدن'}
+      L.push('   '+line);
+      if(x.m.length>1)x.m.forEach(function(m){L.push('   • '+m.n+': '+ru(m)+wt(m,x.bw))});
+      x.m.forEach(function(m){
+        var w=numOf(m.w),pw=numOf(m.pw),r=numOf(m.r);
+        if(w!=null&&pw!=null&&w!==pw)chg.push((w>pw?'↑ ':'↓ ')+m.n+': '+dc(pw)+' → '+dc(w)+' kg');
+        if(w&&r&&m.u==='r'&&x.done&&!x.bw)vol+=w*r*x.done;
+      });
+    });
+    if(chg.length){L.push('─────────────');L.push('📈 تغییر وزنه نسبت به جلسه‌ی قبل');chg.forEach(function(c){L.push(c)})}
+    if(vol>0)L.push('🔢 حجم کل تقریبی (ست × تکرار × وزنه): '+grp(vol)+' kg');
+    if(fb&&(fb.d||fb.b!==''||(fb.n||'').trim())){
+      L.push('─────────────');
+      if(fb.d)L.push('💥 سختی تمرین: '+fa(fb.d)+' از ۵ ('+RPE[fb.d]+')');
+      if(fb.b!=='')L.push('🩺 حال بدن: '+BODY[+fb.b]);
+      if((fb.n||'').trim())L.push('💬 '+fb.n.trim());
+    }
+    L.push('─────────────');
+    L.push('— ارسال‌شده از برنامه‌ی '+(p.coach||'تمرینی'));
+    return L.join('\n');
+  }
+  function repPre(){var el=$('#repPre');if(el&&V&&V.rep)el.textContent=repText(V.rep.sn,V.rep.fb)}
+  function openReport(sn,fin){
+    V.rep={sn:sn,fb:{d:0,b:'',n:''}};
+    var tot=0,dn=0,full=0,h=tgHandle(V.p.tg);
+    sn.ex.forEach(function(x){tot+=x.s;dn+=x.done;if(x.done>=x.s)full++});
+    var pct=tot?Math.round(dn/tot*100):0;
+    openModal('<button class="mclose" data-act="close" type="button">×</button><h3>'+(fin?'🎉 آفرین! گزارش رو برای مربی بفرست':'گزارش تمرین برای مربی')+'</h3>'+
+      '<div class="rstats"><div><b>'+fa(dn)+'/'+fa(tot)+'</b>ست</div><div><b>'+fa(full)+'/'+fa(sn.ex.length)+'</b>حرکت کامل</div><div><b>'+fa(pct)+'٪</b>پیشرفت</div></div>'+
+      '<div class="rlab">این تمرین چقدر سخت بود؟</div><div class="rchips" id="rpeRow">'+[1,2,3,4,5].map(function(n){return '<button class="rc" type="button" data-act="rpe" data-v="'+n+'">'+fa(n)+'<small>'+RPE[n]+'</small></button>'}).join('')+'</div>'+
+      '<div class="rlab">حال بدنت چطور بود؟</div><div class="rchips" id="bodyRow">'+BODY.map(function(b,i){return '<button class="rc w" type="button" data-act="rbody" data-v="'+i+'">'+b+'</button>'}).join('')+'</div>'+
+      '<div class="rlab">توضیح برای مربی (اختیاری)</div><textarea id="repNote" placeholder="مثلاً: وزنه‌ی لت سبک بود / کمرم کمی درد داشت"></textarea>'+
+      '<div class="rlab">پیش‌نمایش گزارش</div><pre class="reppre" id="repPre"></pre>'+
+      (h?'<button class="btn pri mbtn" type="button" data-act="rtg" style="text-align:center;margin-top:12px">✈️ ارسال به مربی در تلگرام (@'+esc(h)+')<small>گزارش کپی می‌شه و چت مربی باز می‌شه؛ اگه متن خودش نیومد، پیست کن</small></button>':'<div class="hint" style="margin-top:10px">آیدی تلگرام مربی توی این برنامه ثبت نشده؛ گزارش رو کپی کن یا با «اشتراک‌گذاری» برای مربی بفرست.</div>')+
+      (navigator.share?'<button class="btn mbtn" type="button" data-act="rshare" style="text-align:center">📤 اشتراک‌گذاری (واتساپ، تلگرام، …)</button>':'')+
+      '<button class="btn mbtn" type="button" data-act="rcopy" style="text-align:center">📋 کپی گزارش</button>');
+    repPre();
+  }
+  function copyText(t,cb){
+    function fb(){
+      var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);ta.focus();ta.select();try{ta.setSelectionRange(0,t.length)}catch(e){}
+      var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+      document.body.removeChild(ta);cb(ok);
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){cb(true)},fb)}else fb();
+  }
+  function repSend(a){
+    if(!V||!V.rep)return;
+    var txt=repText(V.rep.sn,V.rep.fb);
+    if(a==='rshare'){try{navigator.share({title:'گزارش تمرین',text:txt}).catch(function(){})}catch(e){}return}
+    copyText(txt,function(ok){toast(ok?(a==='rtg'?'گزارش کپی شد؛ اگه تو چت مربی نیومد، پیست کن':'گزارش کپی شد ✓'):'کپی نشد؛ متن پیش‌نمایش رو دستی کپی کن')});
+    if(a==='rtg'){
+      var h=tgHandle(V.p.tg);if(!h)return;
+      var url='https://t.me/'+h+'?text='+encodeURIComponent(txt.length>3000?txt.slice(0,3000):txt),w=null;
+      try{w=window.open(url,'_blank')}catch(e){}
+      if(!w)location.href=url;
+    }
   }
   function vWeight(ev){
     var inp=ev.target;if(!inp.matches||!inp.matches('.w input'))return;
@@ -1453,6 +1575,7 @@
   document.addEventListener('input',function(ev){
     if(ev.target&&ev.target.id==='quickTx'){quickPreview();return}
     if(ev.target&&ev.target.id==='libQ'){libRender();return}
+    if(ev.target&&ev.target.id==='repNote'){if(V&&V.rep){V.rep.fb.n=ev.target.value;repPre()}return}
     if(ev.target&&ev.target.id==='mlQ'){mlRender();return}
     if(ev.target&&ev.target.id==='expName'){
       plan.student=ev.target.value;save();updExpFn();
