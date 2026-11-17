@@ -74,7 +74,12 @@
   .fld > label{font-size:12px;color:var(--ink2);font-weight:600}
   .bcard input[type=text],.bcard input:not([type]),.bcard select,.bcard textarea,.mbox textarea,.mbox input[type=text]{
     font:inherit;font-size:16px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;color:var(--ink);outline:none;width:100%;-webkit-appearance:none;appearance:none}
-  .bcard select{-webkit-appearance:menulist;appearance:menulist}
+  .bcard select{-webkit-appearance:none;appearance:none;direction:rtl;text-align:right;text-align-last:right;cursor:pointer;font-weight:700;color:var(--ink2);
+    padding-left:40px;background-color:#fff;
+    background-image:linear-gradient(45deg,transparent 50%,var(--acc) 50%),linear-gradient(135deg,var(--acc) 50%,transparent 50%);
+    background-position:20px 52%,26px 52%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;transition:border-color .15s,box-shadow .15s}
+  .bcard select:focus{box-shadow:0 0 0 4px rgba(184,96,109,.14)}
+  .bcard select option{font-weight:600;color:var(--ink);background:#fff}
   .bcard input:focus,.bcard select:focus,.bcard textarea:focus,.mbox textarea:focus{border-color:var(--acc)}
   .bcard textarea,.mbox textarea{min-height:76px;resize:vertical}
 
@@ -190,7 +195,9 @@
   .vr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 2px;font-size:12px;color:var(--ink2);font-weight:700}
   .vr button{border:1.5px solid var(--line);background:#fff;border-radius:16px;font:inherit;font-size:12px;font-weight:700;padding:5px 11px;color:var(--ink2)}
   .vr button.on{background:var(--acc);border-color:var(--acc);color:#fff}
-  .vrow.vs .vrsel{flex:none;font:inherit;font-size:12px;border:1.5px solid var(--line);border-radius:12px;padding:7px 8px;background:#fff;color:var(--ink)}
+  .vrow.vs{flex-wrap:wrap}
+  .bcard .vrow.vs select.vrsel{width:auto;flex:1 1 150px;min-width:0;border-radius:20px;padding:8px 14px 8px 38px;font-size:13px;background-color:var(--soft);border-color:transparent;background-position:17px 52%,23px 52%}
+  .bcard .vrow.vs select.vrsel:focus{background-color:#fff;border-color:var(--acc)}
   .vwrap.port{aspect-ratio:9/16;width:min(100%,calc(var(--vav) * .5625))}
   .vwrap.tall{aspect-ratio:auto;height:min(640px,var(--vav));background:#fff}
   .vwrap iframe,.vwrap video{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;object-fit:contain}
@@ -671,7 +678,7 @@
       h+='<div class="vrow"><input type="text" inputmode="url" data-sc="m"'+a+' data-f="v" value="'+esc(m.v)+'" placeholder="لینک ویدیو (یوتیوب، آپارات، اینستاگرام، mp4)" autocomplete="off" autocapitalize="off">'+
          '<button class="btn sm ghost" type="button" data-act="vtest"'+a+'>🎥 پیش‌نمایش</button></div>'+
          '<div class="vt">'+vHint(pv)+'</div>'+
-         '<div class="vrow vs"><button class="btn sm ghost" type="button" data-act="vyt"'+a+'>🔎 یوتیوب</button><button class="btn sm ghost" type="button" data-act="vap"'+a+'>🔎 آپارات</button><select class="vrsel" data-sc="m"'+a+' data-f="vr" aria-label="نسبت کادر ویدیو">'+[['','کادر: خودکار'],['16:9','افقی ۱۶:۹'],['4:3','۴:۳'],['1:1','مربع'],['4:5','۴:۵'],['9:16','عمودی ۹:۱۶']].map(function(o){return '<option value="'+o[0]+'"'+((m.vr||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><span class="vt" style="margin:0">پیدا کردن ویدیوی این حرکت</span></div>';
+         '<div class="vrow vs"><button class="btn sm ghost" type="button" data-act="vyt"'+a+'>🔎 یوتیوب</button><button class="btn sm ghost" type="button" data-act="vap"'+a+'>🔎 آپارات</button><select class="vrsel" data-sc="m"'+a+' data-f="vr" aria-label="نسبت کادر ویدیو">'+[['','📐 کادر ویدیو: خودکار'],['16:9','📐 افقی ۱۶:۹'],['4:3','📐 ۴:۳'],['1:1','📐 مربع ۱:۱'],['4:5','📐 ۴:۵'],['9:16','📐 عمودی ۹:۱۶']].map(function(o){return '<option value="'+o[0]+'"'+((m.vr||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>';
     }
     return h+'</div>';
   }
